@@ -262,7 +262,7 @@ Available examples:
 Each example demonstrates different features and use cases of gopq. We encourage you to explore these examples to better understand how to use the library in your projects.
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change. Ensure to update tests as appropriate.
+Contributions are welcome (even desired)! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change. Ensure to update tests as appropriate.
 
 
 ## License
