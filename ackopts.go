@@ -13,6 +13,10 @@ type AckOpts struct {
 	MaxRetries   int
 	RetryBackoff time.Duration
 
+	// DeleteUponAck detes record from the queue when acked, thus lowering
+	// maintenance costs (database does not grow).
+	DeleteUponAck bool
+
 	// Has a default behaviour of dropping the message
 	BehaviourOnFailure func(msg Msg) error
 	FailureCallbacks   []func(msg Msg) error
