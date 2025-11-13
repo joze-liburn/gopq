@@ -9,7 +9,7 @@ import (
 const (
 	extEnqueueQuery    = "call push(?)"   /* item */
 	extTryDequeueQuery = "call pop(?, ?)" /* now, new-deadline */
-	extAckQuery        = "call ack(?)"    /* id */
+	extAckQuery        = "call ack(?, ?)" /* id, now */
 	extLenQuery        = "call len(?)"    /* now */
 )
 
