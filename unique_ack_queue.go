@@ -68,7 +68,6 @@ func NewUniqueAckQueue(filePath string, opts AckOpts) (*AcknowledgeableQueue, er
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
 			queries: baseQueries{
-				createTable: formattedCreateTableQuery,
 				enqueue:     formattedEnqueueQuery,
 				tryDequeue:  formattedTryDequeueQuery,
 				len:         formattedLenQuery,

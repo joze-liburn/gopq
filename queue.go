@@ -95,7 +95,6 @@ type AcknowledgeableQueue struct {
 }
 
 type baseQueries struct {
-	createTable string
 	enqueue     string
 	tryDequeue  string
 	len         string
