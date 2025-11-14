@@ -3,8 +3,10 @@ package gopq
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
+	"github.com/mattdeak/gopq/internal"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -300,4 +302,26 @@ func (q *AcknowledgeableQueue) RegisterBehaviourOnFailure(fn func(msg Msg) error
 
 func (q *Queue) now() int64 {
 	return time.Now().Unix()
+}
+
+// NewSimpleQueue creates a new simple queue.
+// If filePath is empty, the queue will be created in memory.
+func NewQueue(db *sql.DB, queries QueryFactory) (*Queue, error) {
+	q := baseQueries{
+		enqueue:    queries.Enqueue(),
+		tryDequeue: queries.TryDequeue(),
+		len:        queries.Len(),
+	}
+	err := internal.PrepareDB(db, queries.Create(), q.enqueue, q.tryDequeue, q.len)
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare database: %w", err)
+	}
+
+	return &Queue{
+		db:           db,
+		name:         "",
+		pollInterval: defaultPollInterval,
+		notifyChan:   internal.MakeNotifyChan(),
+		queries:      q,
+	}, nil
 }

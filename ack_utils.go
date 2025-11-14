@@ -22,7 +22,31 @@ const (
 	`
 )
 
+type queryFactory string
+
+func (qf queryFactory) selectItemDetails() string {
+    if len(qf) > 0{
+	    return fmt.Sprintf(selectItemDetailsQuery, qf)
+    }
+    return "call details(?)"
+}
+
+func (qf queryFactory) deleteItem() string {
+    if len(qf) > 0{
+	    return fmt.Sprintf(deleteItemQuery, qf)
+    }
+    return "call delete(?)"
+}
+
+func (qf queryFactory) expireAckDeadline() string {
+if len(qf)>0 {
+    return fmt.Sprintf(expireAckDeadlineQuery, qf)
+}
+return "call updateDeadlin(?)"
+}
+
 func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts AckOpts) error {
+    qf := queryFactory(tableName)
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -33,7 +57,7 @@ func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts 
 
 	var retryCount int
 	var ackDeadline int64
-	err = tx.QueryRow(fmt.Sprintf(selectItemDetailsQuery, tableName), id).Scan(&retryCount, &ackDeadline)
+	err = tx.QueryRow(qf.selectItemDetails(), id).Scan(&retryCount, &ackDeadline)
 	if err != nil {
 		return fmt.Errorf("failed to get item details: %w", err)
 	}
@@ -64,8 +88,9 @@ func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts 
 }
 
 func handleTooManyRetries(tx *sql.Tx, tableName string, id int64, opts AckOpts) error {
+    qf := queryFactory(tableName)
 	var item []byte
-	err := tx.QueryRow(fmt.Sprintf(deleteItemQuery, tableName), id).Scan(&item)
+	err := tx.QueryRow(qf.deleteItem(), id).Scan(&item)
 	if err != nil {
 		return fmt.Errorf("failed to delete item for on failure: %w", err)
 	}
@@ -101,6 +126,6 @@ func max(a, b time.Duration) time.Duration {
 func expireAckDeadline(db *sql.DB, name string, id int64) error {
 	// expiredTime is 1 second in the past to ensure that the ack deadline is expired
 	expiredTime := time.Now().Add(-1 * time.Second).Unix()
-	_, err := db.Exec(fmt.Sprintf(expireAckDeadlineQuery, name), expiredTime, id)
+	_, err := db.Exec(queryFactory(name).expireAckDeadline(), expiredTime, id)
 	return err
 }

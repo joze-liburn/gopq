@@ -6,6 +6,29 @@ import (
 	"github.com/mattdeak/gopq/internal"
 )
 
+type SimpleQueryFactory struct {
+	UtilsQueryFactory
+}
+
+//func (qf SimpleQueryFactory) Enqueue() string    { return SqliteUtils.Enqueue() }
+// func (qf SimpleQueryFactory) TryDequeue() string { return SqliteUtils.TryDequeue() }
+// func (qf SimpleQueryFactory) Ack() string        { return SqliteUtils.Ack() }
+// func (qf SimpleQueryFactory) Len() string        { return SqliteUtils.Len() }
+
+func (qf SimpleQueryFactory) SelectItemDetails() string {
+	return SqliteUtils.SelectItemDetails()
+}
+
+/*
+func (qf SimpleQueryFactory) DeleteItem() string { return Common.DeleteItem() }
+func (qf SimpleQueryFactory) UpdateItemForRetry() string {
+	return Common.UpdateItemForRetry()
+}
+func (qf SimpleQueryFactory) ExpireAckDeadline() string {
+	return Common.ExpireAckDeadline()
+}
+*/
+
 const (
 	simpleCreateTableQuery = `
         CREATE TABLE IF NOT EXISTS %[1]s (
@@ -44,6 +67,9 @@ func NewSimpleQueue(filePath string) (*Queue, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
+
+	sf := SimpleQueryFactory{UtilsQueryFactory: InternalQueryFactory(filePath)}
+	fmt.Println(sf.SelectItemDetails())
 
 	tableName := internal.DetermineTableName("simple_queue", filePath)
 
