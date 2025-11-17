@@ -59,7 +59,6 @@ func NewSimpleQueue(filePath string) (*Queue, error) {
 
 	return &Queue{
 		db:           db,
-		name:         tableName,
 		pollInterval: defaultPollInterval,
 		notifyChan:   internal.MakeNotifyChan(),
 		queries: baseQueries{

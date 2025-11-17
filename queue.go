@@ -82,7 +82,6 @@ type Msg struct {
 // It contains the database connection, queue name, and other necessary fields for queue operations.
 type Queue struct {
 	db           *sql.DB
-	name         string
 	pollInterval time.Duration
 	notifyChan   chan struct{}
 	queries      baseQueries

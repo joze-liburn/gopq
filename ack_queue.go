@@ -78,7 +78,6 @@ func NewAckQueue(filePath string, opts AckOpts) (*AcknowledgeableQueue, error) {
 	return &AcknowledgeableQueue{
 		Queue: Queue{
 			db:           db,
-			name:         tableName,
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
 			queries: baseQueries{
