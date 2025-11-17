@@ -2,7 +2,7 @@
 --
 -- One important issue is the absence of delete ... returning statement
 --
--- 2025-11-14
+-- 2025-11-17
 create table gopq_queue (
     id integer not null auto_increment primary key,
     item blob(1024) not null,
@@ -10,6 +10,7 @@ create table gopq_queue (
     processed_at timestamp
 );
 
+-- Inserts the item into the table.
 create procedure gopq_push(it blob(1024))
 begin
     insert into gopq_queue (item) value (it);
@@ -27,6 +28,7 @@ begin
     order by enqueued_at asc
     limit 1;
 
+
     update gopq_queue
     set processed_at = current_timestamp
     where id = @id;
@@ -34,8 +36,7 @@ begin
     select @id as id, @item as item;
 end;
 
--- Dequeue element from the queue and deletes the record. Helps keeping database
--- small and thus lowers the maintenance costs.
+-- Dequeue element from the queue and deletes the record from the table. 
 create procedure gopq_pop_delete()
 begin
     select id, item
@@ -52,8 +53,10 @@ begin
     select @id as id, @item as item;
 end;
 
+-- Return the number of elements in the queue.
 create procedure gopq_len()
 begin
-    select count(1) from gopq_queue
+    select count(1) 
+    from gopq_queue
     where processed_at is null;
 end;
