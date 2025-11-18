@@ -55,14 +55,12 @@ func NewUniqueQueue(filePath string) (*Queue, error) {
 
 	return &Queue{
 		db:           db,
-		name:         tableName,
 		pollInterval: defaultPollInterval,
 		notifyChan:   internal.MakeNotifyChan(),
 		queries: baseQueries{
-			createTable: formattedCreateTableQuery,
-			enqueue:     formattedEnqueueQuery,
-			tryDequeue:  formattedTryDequeueQuery,
-			len:         formattedLenQuery,
+			enqueue:    formattedEnqueueQuery,
+			tryDequeue: formattedTryDequeueQuery,
+			len:        formattedLenQuery,
 		},
 	}, nil
 

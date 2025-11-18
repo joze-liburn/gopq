@@ -64,19 +64,23 @@ func NewUniqueAckQueue(filePath string, opts AckOpts) (*AcknowledgeableQueue, er
 	return &AcknowledgeableQueue{
 		Queue: Queue{
 			db:           db,
-			name:         tableName,
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
 			queries: baseQueries{
-				createTable: formattedCreateTableQuery,
-				enqueue:     formattedEnqueueQuery,
-				tryDequeue:  formattedTryDequeueQuery,
-				len:         formattedLenQuery,
+				enqueue:    formattedEnqueueQuery,
+				tryDequeue: formattedTryDequeueQuery,
+				len:        formattedLenQuery,
 			},
 		},
 		AckOpts: opts,
 		ackQueries: ackQueries{
 			ack: formattedAckQuery,
+			ackUtilsQueries: ackUtilsQueries{
+				details:  fmt.Sprintf(sqlite.details, tableName),
+				delete:   fmt.Sprintf(sqlite.delete, tableName),
+				forRetry: fmt.Sprintf(sqlite.forRetry, tableName),
+				expire:   fmt.Sprintf(sqlite.expire, tableName),
+			},
 		},
 	}, nil
 }

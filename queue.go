@@ -82,7 +82,6 @@ type Msg struct {
 // It contains the database connection, queue name, and other necessary fields for queue operations.
 type Queue struct {
 	db           *sql.DB
-	name         string
 	pollInterval time.Duration
 	notifyChan   chan struct{}
 	queries      baseQueries
@@ -95,13 +94,20 @@ type AcknowledgeableQueue struct {
 }
 
 type baseQueries struct {
-	createTable string
-	enqueue     string
-	tryDequeue  string
-	len         string
+	enqueue    string
+	tryDequeue string
+	len        string
+}
+
+type ackUtilsQueries struct {
+	details  string
+	delete   string
+	forRetry string
+	expire   string
 }
 
 type ackQueries struct {
+	ackUtilsQueries
 	ack string
 }
 
@@ -225,14 +231,14 @@ func (q *AcknowledgeableQueue) AckCtx(ctx context.Context, id int64) error {
 // It takes the ID of the message to negative acknowledge.
 // This is non-blocking, and will return immediately.
 func (q *AcknowledgeableQueue) TryNack(id int64) error {
-	return nackImpl(context.Background(), q.db, q.name, id, q.AckOpts)
+	return q.ackQueries.nackImpl(context.Background(), q.db, id, q.AckOpts)
 }
 
 // TryNackCtx indicates that an item processing has failed and should be requeued.
 // It takes the ID of the message to negative acknowledge.
 // This is non-blocking, and will return immediately.
 func (q *AcknowledgeableQueue) TryNackCtx(ctx context.Context, id int64) error {
-	return nackImpl(ctx, q.db, q.name, id, q.AckOpts)
+	return q.ackQueries.nackImpl(ctx, q.db, id, q.AckOpts)
 }
 
 // Nack indicates that an item processing has failed and should be requeued.
@@ -286,7 +292,7 @@ func (q *AcknowledgeableQueue) TryDequeueCtx(ctx context.Context) (Msg, error) {
 // It takes the ID of the message to expire the acknowledgement deadline for.
 // Returns an error if the operation fails or the message doesn't exist.
 func (q *AcknowledgeableQueue) ExpireAck(id int64) error {
-	return expireAckDeadline(q.db, q.name, id)
+	return q.ackQueries.expireAckDeadline(q.db, id)
 }
 
 // SetBehaviourOnFailure sets the behaviour on failure for the queue.

@@ -7,22 +7,22 @@ import (
 	"time"
 )
 
-const (
-	selectItemDetailsQuery  = "SELECT retry_count, ack_deadline FROM %s WHERE id = ?"
-	deleteItemQuery         = "DELETE FROM %s WHERE id = ? RETURNING item"
-	updateItemForRetryQuery = `
+var sqlite = ackUtilsQueries{
+	details: "SELECT retry_count, ack_deadline FROM %s WHERE id = ?",
+	delete:  "DELETE FROM %s WHERE id = ? RETURNING item",
+	forRetry: `
 		UPDATE %s 
 		SET ack_deadline = ?, retry_count = retry_count + 1
 		WHERE id = ?
-	`
-	expireAckDeadlineQuery = `
+	`,
+	expire: `
 		UPDATE %s 
 		SET ack_deadline = ?
 		WHERE id = ?
-	`
-)
+	`,
+}
 
-func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts AckOpts) error {
+func (q *ackQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts AckOpts) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -33,7 +33,7 @@ func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts 
 
 	var retryCount int
 	var ackDeadline int64
-	err = tx.QueryRow(fmt.Sprintf(selectItemDetailsQuery, tableName), id).Scan(&retryCount, &ackDeadline)
+	err = tx.QueryRow(q.details, id).Scan(&retryCount, &ackDeadline)
 	if err != nil {
 		return fmt.Errorf("failed to get item details: %w", err)
 	}
@@ -45,12 +45,12 @@ func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts 
 
 	// Check if we have reached the maximum number of retries
 	if retryCount >= opts.MaxRetries && opts.MaxRetries != InfiniteRetries {
-		return handleTooManyRetries(tx, tableName, id, opts)
+		return q.handleTooManyRetries(tx, id, opts)
 	}
 
 	// Use the maximum of retryBackoff and ackTimeout
 	newDeadline := time.Now().Add(max(opts.RetryBackoff, opts.AckTimeout)).Unix()
-	_, err = tx.Exec(fmt.Sprintf(updateItemForRetryQuery, tableName), newDeadline, id)
+	_, err = tx.Exec(q.forRetry, newDeadline, id)
 	if err != nil {
 		return fmt.Errorf("failed to update item for retry: %w", err)
 	}
@@ -63,9 +63,9 @@ func nackImpl(ctx context.Context, db *sql.DB, tableName string, id int64, opts 
 	return nil
 }
 
-func handleTooManyRetries(tx *sql.Tx, tableName string, id int64, opts AckOpts) error {
+func (q *ackQueries) handleTooManyRetries(tx *sql.Tx, id int64, opts AckOpts) error {
 	var item []byte
-	err := tx.QueryRow(fmt.Sprintf(deleteItemQuery, tableName), id).Scan(&item)
+	err := tx.QueryRow(q.delete, id).Scan(&item)
 	if err != nil {
 		return fmt.Errorf("failed to delete item for on failure: %w", err)
 	}
@@ -98,9 +98,9 @@ func max(a, b time.Duration) time.Duration {
 	return b
 }
 
-func expireAckDeadline(db *sql.DB, name string, id int64) error {
+func (q *ackQueries) expireAckDeadline(db *sql.DB, id int64) error {
 	// expiredTime is 1 second in the past to ensure that the ack deadline is expired
 	expiredTime := time.Now().Add(-1 * time.Second).Unix()
-	_, err := db.Exec(fmt.Sprintf(expireAckDeadlineQuery, name), expiredTime, id)
+	_, err := db.Exec(q.expire, expiredTime, id)
 	return err
 }
