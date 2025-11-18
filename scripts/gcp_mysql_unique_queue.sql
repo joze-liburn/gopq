@@ -31,11 +31,13 @@ begin
     order by enqueued_at asc
     limit 1;
 
-    update gopq_queue
-    set processed_at = current_timestamp
-    where id = @id;
+    if found_rows() = 1 then
+        update gopq_queue
+        set processed_at = current_timestamp
+        where id = @id;
 
-    select @id as id, @item as item;
+        select @id as id, @item as item;
+    end if;
 end;
 
 -- Dequeue element from the queue and deletes the record. Helps keeping database
@@ -50,10 +52,12 @@ begin
     order by enqueued_at asc
     limit 1;
 
-    delete from gopq_queue
-    where id = @id;
+    if found_rows() = 1 then
+        delete from gopq_queue
+        where id = @id;
 
-    select @id as id, @item as item;
+        select @id as id, @item as item;
+    end if;
 end;
 
 create procedure gopq_len()
