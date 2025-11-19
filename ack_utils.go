@@ -22,7 +22,7 @@ var sqlite = ackUtilsQueries{
 	`,
 }
 
-func (q *ackQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts AckOpts) error {
+func (q *AckQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts AckOpts) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -63,7 +63,7 @@ func (q *ackQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts Ac
 	return nil
 }
 
-func (q *ackQueries) handleTooManyRetries(tx *sql.Tx, id int64, opts AckOpts) error {
+func (q *AckQueries) handleTooManyRetries(tx *sql.Tx, id int64, opts AckOpts) error {
 	var item []byte
 	err := tx.QueryRow(q.delete, id).Scan(&item)
 	if err != nil {
@@ -98,7 +98,7 @@ func max(a, b time.Duration) time.Duration {
 	return b
 }
 
-func (q *ackQueries) expireAckDeadline(db *sql.DB, id int64) error {
+func (q *AckQueries) expireAckDeadline(db *sql.DB, id int64) error {
 	// expiredTime is 1 second in the past to ensure that the ack deadline is expired
 	expiredTime := time.Now().Add(-1 * time.Second).Unix()
 	_, err := db.Exec(q.expire, expiredTime, id)

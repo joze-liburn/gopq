@@ -110,7 +110,7 @@ create procedure gopq_updateForRetry(deadline int, id int)
 begin
     update gopq_ackqueue
     set 
-        deadline = deadline
+        ack_deadline = deadline
         , retry_count = retry_count + 1
     where 
         gopq_ackqueue.id = id;
@@ -122,7 +122,7 @@ create procedure gopq_expireAckDeadline(deadline int, id int)
 begin
     update gopq_ackqueue
     set 
-        gopq_ackqueue.deadline = deadline
+        ack_deadline = deadline
     where 
         gopq_ackqueue.id = id;
 end

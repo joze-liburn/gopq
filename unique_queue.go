@@ -57,7 +57,7 @@ func NewUniqueQueue(filePath string) (*Queue, error) {
 		db:           db,
 		pollInterval: defaultPollInterval,
 		notifyChan:   internal.MakeNotifyChan(),
-		queries: baseQueries{
+		queries: BaseQueries{
 			enqueue:    formattedEnqueueQuery,
 			tryDequeue: formattedTryDequeueQuery,
 			len:        formattedLenQuery,

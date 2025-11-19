@@ -61,10 +61,10 @@ func NewSimpleQueue(filePath string) (*Queue, error) {
 		db:           db,
 		pollInterval: defaultPollInterval,
 		notifyChan:   internal.MakeNotifyChan(),
-		queries: baseQueries{
-			enqueue:     formattedEnqueueQuery,
-			tryDequeue:  formattedTryDequeueQuery,
-			len:         formattedLenQuery,
+		queries: BaseQueries{
+			enqueue:    formattedEnqueueQuery,
+			tryDequeue: formattedTryDequeueQuery,
+			len:        formattedLenQuery,
 		},
 	}, nil
 }

@@ -66,14 +66,14 @@ func NewUniqueAckQueue(filePath string, opts AckOpts) (*AcknowledgeableQueue, er
 			db:           db,
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
-			queries: baseQueries{
+			queries: BaseQueries{
 				enqueue:    formattedEnqueueQuery,
 				tryDequeue: formattedTryDequeueQuery,
 				len:        formattedLenQuery,
 			},
 		},
 		AckOpts: opts,
-		ackQueries: ackQueries{
+		ackQueries: AckQueries{
 			ack: formattedAckQuery,
 			ackUtilsQueries: ackUtilsQueries{
 				details:  fmt.Sprintf(sqlite.details, tableName),

@@ -84,16 +84,16 @@ type Queue struct {
 	db           *sql.DB
 	pollInterval time.Duration
 	notifyChan   chan struct{}
-	queries      baseQueries
+	queries      BaseQueries
 }
 
 type AcknowledgeableQueue struct {
 	Queue
 	AckOpts
-	ackQueries ackQueries
+	ackQueries AckQueries
 }
 
-type baseQueries struct {
+type BaseQueries struct {
 	enqueue    string
 	tryDequeue string
 	len        string
@@ -106,7 +106,7 @@ type ackUtilsQueries struct {
 	expire   string
 }
 
-type ackQueries struct {
+type AckQueries struct {
 	ackUtilsQueries
 	ack string
 }

@@ -14,20 +14,20 @@ func NewExternalQueue(db *sql.DB, opts ...QueueOptions) (*Queue, error) {
 	qo.Apply(opts...)
 
 	dequeue := map[DequeueAction]string{
-		DequeueMark:   "call gopq_pop_store()",
-		DequeueDelete: "call gopq_pop_delete()",
+		DequeueMark:   Flavour("call gopq_pop_store()", qo.CallConvention),
+		DequeueDelete: Flavour("call gopq_pop_delete()", qo.CallConvention),
 	}
-	q := baseQueries{
-		enqueue:    "call gopq_push(?)",
-		tryDequeue: dequeue[qo.DequeueAction],
-		len:        "call gopq_len()",
+	q := BaseQueries{
+		enqueue:    Flavour("call gopq_push(?)", qo.CallConvention),
+		tryDequeue: Flavour(dequeue[qo.DequeueAction], qo.CallConvention),
+		len:        Flavour("call gopq_len()", qo.CallConvention),
 	}
 	return NewExternalQueueWithQueries(db, q, opts...)
 }
 
 // NewExternalQueue creates a new queue based on external database. The
 // behaivour of the queue is based on database implementation details.
-func NewExternalQueueWithQueries(db *sql.DB, q baseQueries, opts ...QueueOptions) (*Queue, error) {
+func NewExternalQueueWithQueries(db *sql.DB, q BaseQueries, opts ...QueueOptions) (*Queue, error) {
 	err := internal.PrepareDB(db, "", q.enqueue, q.tryDequeue, q.len)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create external queue: %w", err)
