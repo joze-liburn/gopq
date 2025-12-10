@@ -1,6 +1,27 @@
 package gopq
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+)
+
+func TestDetect(t *testing.T) {
+	tests := []struct {
+		name string
+	}{}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, _, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("%s: an error %s while opening database", test.name, err.Error())
+			}
+			defer db.Close()
+
+		})
+	}
+}
 
 func TestFlavour(t *testing.T) {
 	tests := []struct {

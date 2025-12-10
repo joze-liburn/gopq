@@ -18,26 +18,27 @@ func NewExternalAckQueue(db *sql.DB, ackOpts AckOpts, opts ...QueueOptions) (*Ac
 		DequeueDelete: Flavour("call gopq_ack_delete(:p_id, :now)", qo.CallConvention),
 	}
 	bq := BaseQueries{
-		enqueue:    Flavour("call gopq_push_ack(:it)", qo.CallConvention),
-		tryDequeue: Flavour("call gopq_pop_ack(:now, :deadline)", qo.CallConvention),
-		len:        Flavour("call gopq_len_ack(:now)", qo.CallConvention),
+		Enqueue:    Flavour("call gopq_push_ack(:it)", qo.CallConvention),
+		TryDequeue: Flavour("call gopq_pop_ack(:now, :deadline)", qo.CallConvention),
+		Len:        Flavour("call gopq_len_ack(:now)", qo.CallConvention),
 	}
 	aq := AckQueries{
-		ackUtilsQueries: ackUtilsQueries{
-			details:  Flavour("call gopq_selectItemDetails(:p_id)", qo.CallConvention),
-			delete:   Flavour("call gopq_deleteItem(:p_id)", qo.CallConvention),
-			forRetry: Flavour("call gopq_updateForRetry(:p_deadline, :p_id)", qo.CallConvention),
-			expire:   Flavour("call gopq_expireAckDeadline(:p_deadline, :p_id)", qo.CallConvention),
+        BaseQueries: bq,
+		AckUtilsQueries: AckUtilsQueries{
+			Details:  Flavour("call gopq_selectItemDetails(:p_id)", qo.CallConvention),
+			Delete:   Flavour("call gopq_deleteItem(:p_id)", qo.CallConvention),
+			ForRetry: Flavour("call gopq_updateForRetry(:p_deadline, :p_id)", qo.CallConvention),
+			Expire:   Flavour("call gopq_expireAckDeadline(:p_deadline, :p_id)", qo.CallConvention),
 		},
-		ack: Flavour(ack[qo.DequeueAction], qo.CallConvention),
+		Ack: Flavour(ack[qo.DequeueAction], qo.CallConvention),
 	}
-	return NewExternalAckQueueWithQueries(db, bq, aq, ackOpts, opts...)
+	return NewExternalAckQueueWithQueries(db, aq, ackOpts, opts...)
 }
 
 // NewExternalQueue creates a new queue based on external database. The
 // behaivour of the queue is based on database implementation details.
-func NewExternalAckQueueWithQueries(db *sql.DB, bq BaseQueries, aq AckQueries, ackOpts AckOpts, opts ...QueueOptions) (*AcknowledgeableQueue, error) {
-	err := internal.PrepareDB(db, "", bq.enqueue, bq.tryDequeue, bq.len, aq.ack, aq.delete, aq.details, aq.forRetry, aq.expire)
+func NewExternalAckQueueWithQueries(db *sql.DB, aq AckQueries, ackOpts AckOpts, opts ...QueueOptions) (*AcknowledgeableQueue, error) {
+	err := internal.PrepareDB(db, "", aq.Enqueue, aq.TryDequeue, aq.Len, aq.Ack, aq.Delete, aq.Details, aq.ForRetry, aq.Expire)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create external queue: %w", err)
 	}
@@ -47,9 +48,22 @@ func NewExternalAckQueueWithQueries(db *sql.DB, bq BaseQueries, aq AckQueries, a
 			db:           db,
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
-			queries:      bq,
+			queries:      aq.BaseQueries,
 		},
 		AckOpts:    ackOpts,
 		ackQueries: aq,
 	}, nil
+}
+
+func NewQueriesAck(tableName, enqueue, tryDequeue, len, ack, details, delete, forRetry, expire string) (BaseQueries, AckQueries) {
+	return NewQueries(tableName, enqueue, tryDequeue, len),
+		AckQueries{
+			AckUtilsQueries: AckUtilsQueries{
+				Details:  details,
+				Delete:   delete,
+				ForRetry: forRetry,
+				Expire:   expire,
+			},
+			Ack: ack,
+		}
 }

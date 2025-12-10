@@ -94,21 +94,22 @@ type AcknowledgeableQueue struct {
 }
 
 type BaseQueries struct {
-	enqueue    string
-	tryDequeue string
-	len        string
+	Enqueue    string
+	TryDequeue string
+	Len        string
 }
 
-type ackUtilsQueries struct {
-	details  string
-	delete   string
-	forRetry string
-	expire   string
+type AckUtilsQueries struct {
+	Details  string
+	Delete   string
+	ForRetry string
+	Expire   string
 }
 
 type AckQueries struct {
-	ackUtilsQueries
-	ack string
+	BaseQueries
+	AckUtilsQueries
+	Ack string
 }
 
 // Close closes the database connection associated with the queue.
@@ -139,7 +140,7 @@ func (q *Queue) TryEnqueue(item []byte) error {
 // TryEnqueueCtx attempts to add an item to the queue.
 // This is non-blocking, and will return immediately.
 func (q *Queue) TryEnqueueCtx(ctx context.Context, item []byte) error {
-	_, err := q.db.ExecContext(ctx, q.queries.enqueue, item)
+	_, err := q.db.ExecContext(ctx, q.queries.Enqueue, item)
 	if err != nil {
 		return handleEnqueueResult(err)
 	}
@@ -173,7 +174,7 @@ func (q *Queue) TryDequeue() (Msg, error) {
 // TryDequeueCtx attempts to remove and return the next item from the queue.
 // This is non-blocking, and will return immediately.
 func (q *Queue) TryDequeueCtx(ctx context.Context) (Msg, error) {
-	row := q.db.QueryRowContext(ctx, q.queries.tryDequeue)
+	row := q.db.QueryRowContext(ctx, q.queries.TryDequeue)
 	var id int64
 	var item []byte
 	err := row.Scan(&id, &item)
@@ -183,7 +184,7 @@ func (q *Queue) TryDequeueCtx(ctx context.Context) (Msg, error) {
 // Len returns the number of items in the queue.
 // It returns the count and any error encountered during the operation.
 func (q *Queue) Len() (int, error) {
-	row := q.db.QueryRow(q.queries.len)
+	row := q.db.QueryRow(q.queries.Len)
 	var count int
 	err := row.Scan(&count)
 	return count, err
@@ -192,7 +193,7 @@ func (q *Queue) Len() (int, error) {
 // Len returns the number of items in the queue.
 // It returns the count and any error encountered during the operation.
 func (q *AcknowledgeableQueue) Len() (int, error) {
-	row := q.db.QueryRow(q.queries.len, q.now())
+	row := q.db.QueryRow(q.queries.Len, q.now())
 	var count int
 	err := row.Scan(&count)
 	return count, err
@@ -201,7 +202,7 @@ func (q *AcknowledgeableQueue) Len() (int, error) {
 // Ack acknowledges that an item has been successfully processed.
 // It takes the ID of the message to acknowledge and returns an error if the operation fails.
 func (q *AcknowledgeableQueue) TryAck(id int64) error {
-	_, err := q.db.Exec(q.ackQueries.ack, id, q.now())
+	_, err := q.db.Exec(q.ackQueries.Ack, id, q.now())
 	return err
 }
 
@@ -209,7 +210,7 @@ func (q *AcknowledgeableQueue) TryAck(id int64) error {
 // It takes the ID of the message to acknowledge and returns an error if the operation fails.
 // This is non-blocking, and will return immediately.
 func (q *AcknowledgeableQueue) TryAckCtx(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, q.ackQueries.ack, id, q.now())
+	_, err := q.db.ExecContext(ctx, q.ackQueries.Ack, id, q.now())
 	return err
 }
 
@@ -280,7 +281,7 @@ func (q *AcknowledgeableQueue) TryDequeue() (Msg, error) {
 // It returns immediately if an item is available, or waits until the context is cancelled.
 func (q *AcknowledgeableQueue) TryDequeueCtx(ctx context.Context) (Msg, error) {
 	ackDeadline := time.Now().Add(q.AckOpts.AckTimeout).Unix()
-	row := q.db.QueryRowContext(ctx, q.queries.tryDequeue, q.now(), ackDeadline)
+	row := q.db.QueryRowContext(ctx, q.queries.TryDequeue, q.now(), ackDeadline)
 	var id int64
 	var item []byte
 	err := row.Scan(&id, &item)

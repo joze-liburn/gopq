@@ -18,9 +18,9 @@ func NewExternalQueue(db *sql.DB, opts ...QueueOptions) (*Queue, error) {
 		DequeueDelete: Flavour("call gopq_pop_delete()", qo.CallConvention),
 	}
 	q := BaseQueries{
-		enqueue:    Flavour("call gopq_push(?)", qo.CallConvention),
-		tryDequeue: Flavour(dequeue[qo.DequeueAction], qo.CallConvention),
-		len:        Flavour("call gopq_len()", qo.CallConvention),
+		Enqueue:    Flavour("call gopq_push(:it)", qo.CallConvention),
+		TryDequeue: Flavour(dequeue[qo.DequeueAction], qo.CallConvention),
+		Len:        Flavour("call gopq_len()", qo.CallConvention),
 	}
 	return NewExternalQueueWithQueries(db, q, opts...)
 }
@@ -28,7 +28,7 @@ func NewExternalQueue(db *sql.DB, opts ...QueueOptions) (*Queue, error) {
 // NewExternalQueue creates a new queue based on external database. The
 // behaivour of the queue is based on database implementation details.
 func NewExternalQueueWithQueries(db *sql.DB, q BaseQueries, opts ...QueueOptions) (*Queue, error) {
-	err := internal.PrepareDB(db, "", q.enqueue, q.tryDequeue, q.len)
+	err := internal.PrepareDB(db, "", q.Enqueue, q.TryDequeue, q.Len)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create external queue: %w", err)
 	}
@@ -39,5 +39,12 @@ func NewExternalQueueWithQueries(db *sql.DB, q BaseQueries, opts ...QueueOptions
 		notifyChan:   internal.MakeNotifyChan(),
 		queries:      q,
 	}, nil
+}
 
+func NewQueries(tableName, enqueue, tryDequeue, len string) BaseQueries {
+	return BaseQueries{
+		Enqueue:    enqueue,
+		TryDequeue: tryDequeue,
+		Len:        len,
+	}
 }

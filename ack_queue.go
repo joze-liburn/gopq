@@ -81,19 +81,19 @@ func NewAckQueue(filePath string, opts AckOpts) (*AcknowledgeableQueue, error) {
 			pollInterval: defaultPollInterval,
 			notifyChan:   internal.MakeNotifyChan(),
 			queries: BaseQueries{
-				enqueue:    formattedEnqueueQuery,
-				tryDequeue: formattedTryDequeueQuery,
-				len:        formattedLenQuery,
+				Enqueue:    formattedEnqueueQuery,
+				TryDequeue: formattedTryDequeueQuery,
+				Len:        formattedLenQuery,
 			},
 		},
 		AckOpts: opts,
 		ackQueries: AckQueries{
-			ack: formattedAckQuery,
-			ackUtilsQueries: ackUtilsQueries{
-				details:  fmt.Sprintf(sqlite.details, tableName),
-				delete:   fmt.Sprintf(sqlite.delete, tableName),
-				forRetry: fmt.Sprintf(sqlite.forRetry, tableName),
-				expire:   fmt.Sprintf(sqlite.expire, tableName),
+			Ack: formattedAckQuery,
+			AckUtilsQueries: AckUtilsQueries{
+				Details:  fmt.Sprintf(sqlite.Details, tableName),
+				Delete:   fmt.Sprintf(sqlite.Delete, tableName),
+				ForRetry: fmt.Sprintf(sqlite.ForRetry, tableName),
+				Expire:   fmt.Sprintf(sqlite.Expire, tableName),
 			},
 		},
 	}, nil

@@ -75,14 +75,17 @@ $$;
 
 -- Return the number of elements in the queue. If the deadline is in the future
 -- then the record doesn't count.
-create or replace procedure gopq_len_ack(now int)
-language sql
-begin atomic
-    select count(1) from gopq_ackqueue
+create or replace function gopq_len_ack(now int)
+returns table (cnt int)
+language plpgsql
+as $$
+begin 
+    select count(1)::integer from gopq_ackqueue
     where 
             (coalesce(ack_deadline, 0) < now)
         and processed_at is null;
 end;
+$$
 
 -- Return the internal processing details of the record.
 create or replace procedure gopq_selectItemDetails(p_id int)

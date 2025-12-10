@@ -81,7 +81,7 @@ begin
     where
         gopq_ackqueue.id = id;
 end
-
+    
 -- Remove the record from the table. Used on recorde that failed to ack more
 -- than allowed number of times.
 create procedure gopq_deleteItem(id int)
@@ -93,7 +93,7 @@ begin
         gopq_ackqueue.id = id;
 
     delete from gopq_ackqueue
-    where gopq_ackqueue.id = @id;
+    where gopq_ackqueue.id = id;
 
     select @item as item;
 end

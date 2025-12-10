@@ -62,9 +62,9 @@ func NewSimpleQueue(filePath string) (*Queue, error) {
 		pollInterval: defaultPollInterval,
 		notifyChan:   internal.MakeNotifyChan(),
 		queries: BaseQueries{
-			enqueue:    formattedEnqueueQuery,
-			tryDequeue: formattedTryDequeueQuery,
-			len:        formattedLenQuery,
+			Enqueue:    formattedEnqueueQuery,
+			TryDequeue: formattedTryDequeueQuery,
+			Len:        formattedLenQuery,
 		},
 	}, nil
 }

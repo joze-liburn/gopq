@@ -37,6 +37,7 @@ func PrepareDB(db *sql.DB, createTableQuery string, queries ...string) error {
 	for _, query := range queries {
 		_, err := db.Prepare(query)
 		if err != nil {
+			fmt.Println("prepare", query)
 			return fmt.Errorf("failed to prepare query: %w", err)
 		}
 	}

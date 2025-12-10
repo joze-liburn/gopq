@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-var sqlite = ackUtilsQueries{
-	details: "SELECT retry_count, ack_deadline FROM %s WHERE id = ?",
-	delete:  "DELETE FROM %s WHERE id = ? RETURNING item",
-	forRetry: `
+var sqlite = AckUtilsQueries{
+	Details: "SELECT retry_count, ack_deadline FROM %s WHERE id = ?",
+	Delete:  "DELETE FROM %s WHERE id = ? RETURNING item",
+	ForRetry: `
 		UPDATE %s 
 		SET ack_deadline = ?, retry_count = retry_count + 1
 		WHERE id = ?
 	`,
-	expire: `
+	Expire: `
 		UPDATE %s 
 		SET ack_deadline = ?
 		WHERE id = ?
@@ -33,7 +33,7 @@ func (q *AckQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts Ac
 
 	var retryCount int
 	var ackDeadline int64
-	err = tx.QueryRow(q.details, id).Scan(&retryCount, &ackDeadline)
+	err = tx.QueryRow(q.Details, id).Scan(&retryCount, &ackDeadline)
 	if err != nil {
 		return fmt.Errorf("failed to get item details: %w", err)
 	}
@@ -50,7 +50,7 @@ func (q *AckQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts Ac
 
 	// Use the maximum of retryBackoff and ackTimeout
 	newDeadline := time.Now().Add(max(opts.RetryBackoff, opts.AckTimeout)).Unix()
-	_, err = tx.Exec(q.forRetry, newDeadline, id)
+	_, err = tx.Exec(q.ForRetry, newDeadline, id)
 	if err != nil {
 		return fmt.Errorf("failed to update item for retry: %w", err)
 	}
@@ -65,7 +65,7 @@ func (q *AckQueries) nackImpl(ctx context.Context, db *sql.DB, id int64, opts Ac
 
 func (q *AckQueries) handleTooManyRetries(tx *sql.Tx, id int64, opts AckOpts) error {
 	var item []byte
-	err := tx.QueryRow(q.delete, id).Scan(&item)
+	err := tx.QueryRow(q.Delete, id).Scan(&item)
 	if err != nil {
 		return fmt.Errorf("failed to delete item for on failure: %w", err)
 	}
@@ -101,6 +101,6 @@ func max(a, b time.Duration) time.Duration {
 func (q *AckQueries) expireAckDeadline(db *sql.DB, id int64) error {
 	// expiredTime is 1 second in the past to ensure that the ack deadline is expired
 	expiredTime := time.Now().Add(-1 * time.Second).Unix()
-	_, err := db.Exec(q.expire, expiredTime, id)
+	_, err := db.Exec(q.Expire, expiredTime, id)
 	return err
 }
